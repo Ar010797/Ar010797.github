@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Rapot Tahfidz Miftahussalam</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #1b5e20;
+            --accent: #2e7d32;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        
+        /* LOGIN PAGE */
+        #login-page {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, var(--primary), #4caf50);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .login-box {
+            background: var(--white); padding: 30px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; width: 300px;
+        }
+        .login-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .login-btn { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* MAIN APP */
+        #main-app { display: none; padding: 15px; max-width: 1200px; margin: auto; }
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .nav-btn { padding: 10px 15px; border: none; background: #ddd; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .nav-btn.active { background: var(--primary); color: white; }
+
+        .section { display: none; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .section.active { display: block; }
+
+        /* FORM STYLING */
+        .card { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #eee; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .btn { padding: 8px 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .btn-green { background: var(--accent); color: white; }
+        .btn-red { background: #d32f2f; color: white; }
+
+        /* TABLE INPUT */
+        .table-input { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        .table-input th { background: #eee; padding: 8px; border: 1px solid #ddd; }
+        .table-input td { border: 1px solid #ddd; padding: 5px; }
+
+        /* --- PREVIEW A4 AREA --- */
+        #preview-viewport { background: #525659; padding: 30px 10px; display: flex; justify-content: center; overflow: auto; }
+        
+        /* Ukuran A4 Presisi */
+        #print-area {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            padding: 12mm 15mm;
+            box-sizing: border-box;
+            position: relative;
+            font-family: 'Times New Roman', Times, serif;
+            color: black;
+            line-height: 1.2;
+            transform-origin: top center;
+        }
+
+        .watermark { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 60%; opacity: 0.07; pointer-events: none; }
+        
+        .kop { border-bottom: 3px double black; padding-bottom: 5px; margin-bottom: 10px; text-align: center; }
+        .kop h2 { margin: 0; font-size: 18pt; text-transform: uppercase; }
+        .kop p { margin: 2px 0; font-size: 9pt; }
+        
+        .siswa-info { width: 100%; font-size: 10pt; margin-bottom: 10px; }
+        .siswa-info td { padding: 1px 0; }
+        
+        .title-box { text-align: center; font-weight: bold; border: 1.5px solid black; padding: 4px; margin-bottom: 8px; font-size: 11pt; }
+        
+        .content-container { display: flex; gap: 10px; align-items: flex-start; }
+        .table-score { width: 100%; border-collapse: collapse; font-size: 9pt; }
+        .table-score th, .table-score td { border: 1.5px solid black; padding: 3px; text-align: center; }
+        .table-score th { background: #f2f2f2; }
+        .text-left { text-align: left !important; padding-left: 5px !important; }
+
+        .catatan-box { border: 1.5px solid black; padding: 8px; margin-top: 10px; font-size: 9.5pt; text-align: center; font-style: italic; font-weight: bold; min-height: 40px; }
+        
+        .ttd-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-top: 20px; text-align: center; font-size: 10pt; }
+        .ttd-img { height: 55px; display: block; margin: 2px auto; }
+        .ttd-space { height: 60px; }
+    </style>
+</head>
+<body>
+
+<div id="login-page">
+    <div class="login-box">
+        <h2 style="color:var(--primary); margin-top:0;">SIMIFTAH</h2>
+        <input type="text" id="username" class="login-input" placeholder="Username">
+        <input type="password" id="password" class="login-input" placeholder="Password">
+        <button class="login-btn" onclick="checkLogin()">MASUK</button>
+        <p id="login-err" style="color:red; font-size:12px; display:none;">Login Gagal!</p>
+    </div>
+</div>
+
+<div id="main-app">
+    <div class="nav-tabs">
+        <button class="nav-btn active" onclick="switchTab('input', this)">1. Input Data</button>
+        <button class="nav-btn" onclick="switchTab('settings', this)">2. Pengaturan Kop</button>
+        <button class="nav-btn" onclick="switchTab('preview', this)">3. Download PDF</button>
+    </div>
+
+    <div id="input" class="section active">
+        <div class="card grid">
+            <div>
+                <label>Pilih/Cari Siswa</label>
+                <select id="studentSelect" onchange="loadStudent()"></select>
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:5px;">
+                <button class="btn btn-green" onclick="addStudent()">+ Siswa Baru</button>
+                <button class="btn btn-red" onclick="deleteStudent()">Hapus</button>
+            </div>
+        </div>
+
+        <div class="card grid">
+            <div><label>Nama Siswa</label><input type="text" id="inName" oninput="saveData()"></div>
+            <div><label>Kelas</label><input type="text" id="inClass" oninput="saveData()"></div>
+            <div><label>Semester</label><input type="text" id="inSem" value="1 (Ganjil)" oninput="saveData()"></div>
+            <div><label>Pengampu</label><input type="text" id="inTeacher" oninput="saveData()"></div>
+        </div>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr;">
+            <div class="card">
+                <label>Target Hafalan (Contoh: JUZ 30)</label>
+                <input type="text" id="inTarH" oninput="saveData()" style="margin-bottom:10px;">
+                <table class="table-input">
+                    <thead><tr><th width="30">No</th><th>Nama Surat</th><th width="70">Nilai</th></tr></thead>
+                    <tbody id="rowHafalan"></tbody>
+                </table>
+                <button class="btn btn-green" onclick="addHRow()">+ Baris</button>
+            </div>
+            <div class="card">
+                <label>Target Tajwid (Contoh: UMMI JILID 1-6)</label>
+                <input type="text" id="inTarT" oninput="saveData()" style="margin-bottom:10px;">
+                <table class="table-input">
+                    <thead><tr><th width="40">Jilid</th><th>Materi Tajwid</th><th width="70">Nilai</th></tr></thead>
+                    <tbody id="rowTajwid"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <label>Catatan Guru</label>
+            <textarea id="inCatatan" rows="2" oninput="saveData()"></textarea>
+        </div>
+    </div>
+
+    <div id="settings" class="section">
+        <h3>Pengaturan Kop & Identitas</h3>
+        <div class="card grid">
+            <div><label>Nama Sekolah</label><input type="text" id="cfgSchool" oninput="saveCfg()"></div>
+            <div><label>Alamat</label><input type="text" id="cfgAddr" oninput="saveCfg()"></div>
+            <div><label>Tahun Ajaran</label><input type="text" id="cfgYear" oninput="saveCfg()"></div>
+            <div><label>Nama Koordinator</label><input type="text" id="cfgCoord" oninput="saveCfg()"></div>
+            <div><label>Nama Kepala Sekolah</label><input type="text" id="cfgHead" oninput="saveCfg()"></div>
+        </div>
+        <div class="card grid">
+            <div><label>Logo Sekolah</label><input type="file" onchange="upImg(this, 'logo')"></div>
+            <div><label>TTD Koordinator</label><input type="file" onchange="upImg(this, 'ttdC')"></div>
+            <div><label>TTD Kepala Sekolah</label><input type="file" onchange="upImg(this, 'ttdH')"></div>
+        </div>
+    </div>
+
+    <div id="preview" class="section" style="padding:0;">
+        <div style="padding:15px; background:#fff; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd;">
+            <select id="prevSelect" onchange="syncPrev()" style="width:200px;"></select>
+            <div>
+                <button class="btn" onclick="zoomView(-0.1)">-</button>
+                <span id="zoomText">100%</span>
+                <button class="btn" onclick="zoomView(0.1)">+</button>
+            </div>
+            <button class="btn btn-red" onclick="downloadPDF()">DOWNLOAD PDF (1 LEMBAR)</button>
+        </div>
+        <div id="preview-viewport">
+            <div id="print-area">
+                <img id="pWatermark" class="watermark">
+                <div class="kop">
+                    <div style="display:flex; align-items:center; justify-content:center;">
+                        <img id="pLogo" style="width:70px; margin-right:15px;">
+                        <div>
+                            <p style="font-size:10pt; margin:0;">شهادة حفظ القرآن الكريم</p>
+                            <h2 id="pSchool">NAMA SEKOLAH</h2>
+                            <p id="pAddr">Alamat Lengkap Sekolah</p>
+                        </div>
+                    </div>
+                    <h3 style="margin:8px 0 2px 0; font-size:13pt;">UJIAN TAHFIDZUL QUR'AN SEMESTER GANJIL</h3>
+                    <p id="pYear" style="font-weight:bold; font-size:10pt;"></p>
+                </div>
+
+                <table class="siswa-info">
+                    <tr>
+                        <td width="10%">Nama</td><td width="55%">: <b id="pName"></b></td>
+                        <td width="15%" align="right">SEMESTER:</td><td width="20%" id="pSem" align="right"></td>
+                    </tr>
+                    <tr><td>Kelas</td><td>: <span id="pClass"></span></td><td></td><td></td></tr>
+                </table>
+
+                <div class="title-box">LAPORAN PENCAPAIAN TAHFIDZ</div>
+
+                <div class="content-container">
+                    <div style="flex: 1.1;">
+                        <div style="border:1.5px solid black; padding:3px; border-bottom:none; font-weight:bold; font-size:8.5pt;">
+                            TARGET HAFALAN: <span id="pTarH"></span>
+                        </div>
+                        <table class="table-score">
+                            <thead><tr><th width="8%">No</th><th>Surat</th><th width="15%">Nilai</th><th width="22%">Predikat</th></tr></thead>
+                            <tbody id="pBodyH"></tbody>
+                        </table>
+                    </div>
+                    <div style="flex: 0.9;">
+                        <div style="border:1.5px solid black; padding:3px; border-bottom:none; font-weight:bold; font-size:8.5pt;">
+                            TARGET TAJWID: <span id="pTarT"></span>
+                        </div>
+                        <table class="table-score">
+                            <thead><tr><th width="15%">Jilid</th><th>Materi Tajwid</th><th width="20%">Nilai</th></tr></thead>
+                            <tbody id="pBodyT"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="pCatatan" class="catatan-box"></div>
+
+                <div class="ttd-grid">
+                    <div>Orang Tua/Wali<br><div class="ttd-space"></div>( ............................ )</div>
+                    <div></div>
+                    <div>
+                        Koordinator Tahfidz<br>
+                        <img id="pTtdC" class="ttd-img">
+                        <b id="pCoord"></b>
+                    </div>
+                </div>
+                <div style="text-align:center; margin-top:5px;">
+                    Mengetahui,<br>Kepala Sekolah<br>
+                    <img id="pTtdH" class="ttd-img">
+                    <b id="pHead"></b>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const LIST_TAJWID = [
+        {j:'1', m:'MAKHROJ HURUF'}, {j:'1', m:'HURUF HIJAIYAH'}, {j:'2', m:'HAROKAT'},
+        {j:'2', m:'HURUF SAMBUNG'}, {j:'2', m:'ANGKA ARAB'}, {j:'3', m:'MAD THOBI\'I'},
+        {j:'3', m:'MAD WAJIB MUTTASHIL'}, {j:'3', m:'MAD JAIZ MUNFASHIL'},
+        {j:'4', m:'PENEKANAN HURUF YANG DITASYDID'}, {j:'4', m:'PENEKANAN HURUF YANG DITASYDID (2)'},
+        {j:'5', m:'CARA WAQOF'}, {j:'5', m:'BACAAN LAFADZ ALLOH'},
+        {j:'5', m:'BACAAN DENGUNG'}, {j:'6', m:'QOLQOLAH'}, {j:'6', m:'NUN IWADH'}
+    ];
+    const PRED = {'A+':'MUMTAZ','A':'JAYYID JIDDAN','B':'JAYYID','C':'MAQBUL','D':'NAQIS'};
+
+    let db = JSON.parse(localStorage.getItem('miftah_v3')) || [];
+    let cfg = JSON.parse(localStorage.getItem('miftah_cfg_v3')) || {
+        school:'SEKOLAH ISLAM MIFTAHUSSALAM KOTAYASA',
+        addr:'Jl. Dipowinangun RT 10 RW 02 Desa Kotayasa Kec. Sumbang',
+        year:'TAHUN AJARAN 2025/2026', coord:'Abdul Rohman', head:'Cikun, S.Pd'
+    };
+    let curIdx = -1;
+    let zoom = 1;
+
+    function checkLogin() {
+        if(document.getElementById('username').value==='Simiftahussalam' && document.getElementById('password').value==='Bismillah') {
+            document.getElementById('login-page').style.display='none';
+            document.getElementById('main-app').style.display='block';
+            init();
+        } else document.getElementById('login-err').style.display='block';
+    }
+
+    function init() {
+        document.getElementById('cfgSchool').value = cfg.school;
+        document.getElementById('cfgAddr').value = cfg.addr;
+        document.getElementById('cfgYear').value = cfg.year;
+        document.getElementById('cfgCoord').value = cfg.coord;
+        document.getElementById('cfgHead').value = cfg.head;
+        refreshSels();
+    }
+
+    function refreshSels() {
+        const sels = [document.getElementById('studentSelect'), document.getElementById('prevSelect')];
+        sels.forEach(s => {
+            s.innerHTML = '<option value="-1">-- Pilih Siswa --</option>';
+            db.forEach((item, i) => {
+                let opt = document.createElement('option');
+                opt.value = i; opt.text = item.name;
+                s.add(opt);
+            });
+        });
+    }
+
+    function addStudent() {
+        let n = prompt("Nama Siswa:");
+        if(!n) return;
+        db.push({
+            name:n, class:'', teacher:'', sem:'1 (Ganjil)', tarH:'', tarT:'', catatan:'',
+            hafalan: Array(10).fill({s:'', n:''}),
+            tajwid: LIST_TAJWID.map(t => ({...t, n:''}))
+        });
+        save(); refreshSels();
+    }
+
+    function loadStudent() {
+        curIdx = document.getElementById('studentSelect').value;
+        if(curIdx == -1) return;
+        let s = db[curIdx];
+        document.getElementById('inName').value = s.name;
+        document.getElementById('inClass').value = s.class;
+        document.getElementById('inTeacher').value = s.teacher;
+        document.getElementById('inSem').value = s.sem;
+        document.getElementById('inTarH').value = s.tarH;
+        document.getElementById('inTarT').value = s.tarT;
+        document.getElementById('inCatatan').value = s.catatan;
+
+        const hb = document.getElementById('rowHafalan'); hb.innerHTML = '';
+        s.hafalan.forEach((h, i) => {
+            hb.innerHTML += `<tr><td>${i+1}</td><td><input type="text" class="h-s" value="${h.s}" oninput="saveData()"></td><td><input type="text" class="h-n" value="${h.n}" oninput="saveData()"></td></tr>`;
+        });
+
+        const tb = document.getElementById('rowTajwid'); tb.innerHTML = '';
+        LIST_TAJWID.forEach((m, i) => {
+            let val = s.tajwid[i] ? s.tajwid[i].n : '';
+            tb.innerHTML += `<tr><td>${m.j}</td><td style="font-size:11px">${m.m}</td><td><input type="text" class="t-n" value="${val}" oninput="saveData()"></td></tr>`;
+        });
+    }
+
+    function saveData() {
+        if(curIdx == -1) return;
+        let s = db[curIdx];
+        s.name = document.getElementById('inName').value;
+        s.class = document.getElementById('inClass').value;
+        s.teacher = document.getElementById('inTeacher').value;
+        s.sem = document.getElementById('inSem').value;
+        s.tarH = document.getElementById('inTarH').value;
+        s.tarT = document.getElementById('inTarT').value;
+        s.catatan = document.getElementById('inCatatan').value;
+        
+        s.hafalan = [];
+        document.querySelectorAll('#rowHafalan tr').forEach(tr => {
+            s.hafalan.push({ s: tr.querySelector('.h-s').value, n: tr.querySelector('.h-n').value });
+        });
+
+        s.tajwid = [];
+        document.querySelectorAll('#rowTajwid tr').forEach((tr, i) => {
+            s.tajwid.push({ ...LIST_TAJWID[i], n: tr.querySelector('.t-n').value });
+        });
+        save();
+    }
+
+    function addHRow() { db[curIdx].hafalan.push({s:'', n:''}); loadStudent(); }
+    function save() { localStorage.setItem('miftah_v3', JSON.stringify(db)); }
+    function saveCfg() {
+        cfg.school = document.getElementById('cfgSchool').value;
+        cfg.addr = document.getElementById('cfgAddr').value;
+        cfg.year = document.getElementById('cfgYear').value;
+        cfg.coord = document.getElementById('cfgCoord').value;
+        cfg.head = document.getElementById('cfgHead').value;
+        localStorage.setItem('miftah_cfg_v3', JSON.stringify(cfg));
+    }
+
+    function upImg(input, key) {
+        let r = new FileReader();
+        r.onload = (e) => { cfg[key] = e.target.result; saveCfg(); };
+        r.readAsDataURL(input.files[0]);
+    }
+
+    function switchTab(id, btn) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+        if(id === 'preview') render();
+    }
+
+    function zoomView(v) { zoom += v; document.getElementById('print-area').style.transform = `scale(${zoom})`; document.getElementById('zoomText').innerText = Math.round(zoom*100)+'%'; }
+    function syncPrev() { curIdx = document.getElementById('prevSelect').value; render(); }
+
+    function render() {
+        if(curIdx == -1) return;
+        let s = db[curIdx];
+        document.getElementById('pName').innerText = s.name;
+        document.getElementById('pClass').innerText = s.class;
+        document.getElementById('pSem').innerText = s.sem;
+        document.getElementById('pSchool').innerText = cfg.school;
+        document.getElementById('pAddr').innerText = cfg.addr;
+        document.getElementById('pYear').innerText = cfg.year;
+        document.getElementById('pTarH').innerText = s.tarH;
+        document.getElementById('pTarT').innerText = s.tarT;
+        document.getElementById('pCatatan').innerText = s.catatan;
+        document.getElementById('pCoord').innerText = cfg.coord;
+        document.getElementById('pHead').innerText = cfg.head;
+        if(cfg.logo) { document.getElementById('pLogo').src = cfg.logo; document.getElementById('pWatermark').src = cfg.logo; }
+        if(cfg.ttdC) document.getElementById('pTtdC').src = cfg.ttdC;
+        if(cfg.ttdH) document.getElementById('pTtdH').src = cfg.ttdH;
+
+        const hb = document.getElementById('pBodyH'); hb.innerHTML = '';
+        s.hafalan.forEach((h, i) => {
+            if(h.s) hb.innerHTML += `<tr><td>${i+1}</td><td class="text-left">${h.s}</td><td>${h.n}</td><td>${PRED[h.n]||'-'}</td></tr>`;
+        });
+
+        const tb = document.getElementById('pBodyT'); tb.innerHTML = '';
+        s.tajwid.forEach(t => {
+            if(t.n) tb.innerHTML += `<tr><td>${t.j}</td><td class="text-left">${t.m}</td><td>${t.n}</td></tr>`;
+        });
+    }
+
+    function downloadPDF() {
+        const el = document.getElementById('print-area');
+        const oldTrans = el.style.transform;
+        el.style.transform = 'scale(1)';
+        const opt = { 
+            margin: 0, 
+            filename: `Rapot_${db[curIdx].name}.pdf`, 
+            html2canvas: { scale: 2, useCORS: true }, 
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+        };
+        html2pdf().set(opt).from(el).save().then(() => el.style.transform = oldTrans);
+    }
+
+    function deleteStudent() {
+        if(curIdx == -1) return;
+        if(confirm("Hapus siswa?")) { db.splice(curIdx, 1); save(); location.reload(); }
+    }
+</script>
+</body>
+</html>
